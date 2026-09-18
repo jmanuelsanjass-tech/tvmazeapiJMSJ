@@ -1,11 +1,15 @@
 package com.example.tvmazeapi.controller;
 
+import com.example.tvmazeapi.dto.CommentRequest;
+import com.example.tvmazeapi.dto.CommentResponse;
 import com.example.tvmazeapi.service.TvMazeService;
 import com.example.tvmazeapi.service.TvMazeShowService;
 import tools.jackson.databind.JsonNode;
 import org.bson.Document;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -30,5 +34,12 @@ public class TvMazeController {
     @GetMapping("/shows/{id}")
     public ResponseEntity<Document> getShow(@PathVariable int id) {
         return ResponseEntity.ok(tvMazeShowService.getShow(id));
+    }
+
+    @PostMapping("/shows/{id}/comments")
+    public ResponseEntity<CommentResponse> addComment(
+            @PathVariable int id,
+            @RequestBody CommentRequest request) {
+        return ResponseEntity.status(201).body(tvMazeShowService.addComment(id, request));
     }
 }

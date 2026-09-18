@@ -1,5 +1,7 @@
 package com.example.tvmazeapi.service;
 
+import com.example.tvmazeapi.dto.CommentRequest;
+import com.example.tvmazeapi.dto.CommentResponse;
 import org.bson.Document;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -11,6 +13,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.ArrayList;
 
 @Service
 public class TvMazeShowService {
@@ -42,6 +45,38 @@ public class TvMazeShowService {
                 .append("comments", List.of());
         mongoTemplate.save(cachedDocument, COLLECTION_NAME);
         return cachedDocument;
+    }
+
+    public CommentResponse addComment(int id, CommentRequest request) {
+        if (request == null || request.comment() == null || request.comment().isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El comentario es obligatorio");
+        }
+        if (request.rating() == null || request.rating() < 1 || request.rating() > 5) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "La calificación debe estar entre 1 y 5");
+        }
+
+        Document show = getShow(id);
+        List<Document> comments = new ArrayList<>(show.getList("comments", Document.class, List.of()));
+        Document comment = new Document()
+                .append("comment", request.comment().trim())
+                .append("rating", request.rating());
+        comments.add(comment);
+        show.put("comments", comments);
+
+        try {
+            mongoTemplate.save(show, COLLECTION_NAME);
+        } catch (DataAccessException exception) {
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "No fue posible guardar el comentario en MongoDB",
+                    exception);
+        }
+
+        return new CommentResponse(id, comment.getString("comment"), comment.getInteger("rating"));
     }
 
     private Document fetchShow(int id) {
